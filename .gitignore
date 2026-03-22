@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+env/
+venv/
+.env
+
+# IDEs
+.vscode/
+
+# Project specific
+uploads/
+runs/
+Mine-crack-datasets-1/
+Snapshot/
+Oddities/
+*.pt
+*.joblib
+*.csv
+crack_*.jpg
