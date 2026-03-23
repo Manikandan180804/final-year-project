@@ -1,171 +1,622 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MineGuard AI - Professional Dashboard</title>
+    <title>MineGuard AI — Mine Safety Dashboard</title>
+    <meta name="description" content="AI-powered open-pit mine rockfall and crack detection system with real-time sensor monitoring, YOLO visual analysis, and intelligent risk prediction.">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
-    <div class="sidebar">
-        <div class="logo"><i class="fa-solid fa-shield-halved"></i> MineGuard AI</div>
-        <nav id="sidebarNav">
-            <ul>
-                <li class="active"><a href="#" data-target="dashboard">Dashboard</a></li>
-                <li><a href="#" data-target="predictions">Predictions</a></li>
-                <li><a href="#" data-target="results">Results</a></li>
-                <li><a href="#" data-target="alerts">Alerts</a></li>
-            </ul>
-        </nav>
-        <div class="sidebar-footer" id="aiChatToggle">
-            <button><i class="fa-solid fa-robot"></i> AI Assistant</button>
-        </div>
-    </div>
 
-    <div class="main-content">
-        <div id="dashboard" class="page-content active">
-            <header class="page-header">
-                <h1>Dashboard Overview</h1>
-                <p>Monitor your rockfall prediction system</p>
-            </header>
-            <div class="grid-container">
-                <div class="card kpi">
-                    <span class="card-title"><i class="fa-solid fa-gauge-high"></i> Current Risk Level</span>
-                    <span class="card-value" id="dash-risk-level">--</span>
-                    <span class="card-description">Latest system analysis</span>
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<div class="sidebar" id="sidebar">
+    <div class="logo">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>MineGuard AI</span>
+    </div>
+    <nav id="sidebarNav">
+        <ul>
+            <li class="active"><a href="#" data-target="dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</a></li>
+            <li><a href="#" data-target="live"><i class="fa-solid fa-satellite-dish"></i>Live Monitor</a></li>
+            <li><a href="#" data-target="predictions"><i class="fa-solid fa-chart-area"></i>Predictions</a></li>
+            <li><a href="#" data-target="map"><i class="fa-solid fa-map"></i>Zone Map</a></li>
+            <li><a href="#" data-target="results"><i class="fa-solid fa-flask"></i>Results</a></li>
+            <li><a href="#" data-target="history"><i class="fa-solid fa-clock-rotate-left"></i>History</a></li>
+            <li><a href="#" data-target="alerts"><i class="fa-solid fa-triangle-exclamation"></i>Alerts <span id="alertBadge" class="alert-badge" style="display:none">0</span></a></li>
+            <li><a href="#" data-target="workers"><i class="fa-solid fa-hard-hat"></i>Workers <span id="workerCountBadge" class="worker-badge">0</span></a></li>
+        </ul>
+    </nav>
+    <div class="sidebar-footer">
+        <button class="theme-btn" id="themeToggle"><i class="fa-solid fa-circle-half-stroke"></i> Toggle Theme</button>
+        <button class="ai-btn" id="aiChatToggle"><i class="fa-solid fa-robot"></i> AI Assistant</button>
+    </div>
+</div>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<div class="main-content">
+
+    <!-- ======== DASHBOARD ======== -->
+    <div id="dashboard" class="page-content active">
+        <header class="page-header">
+            <div>
+                <h1><i class="fa-solid fa-gauge-high"></i> Dashboard Overview</h1>
+                <p>Real-time monitoring of the MineGuard AI prediction system — Tiruchirappalli Mine</p>
+            </div>
+            <div class="header-actions">
+                <select id="locationSelect" class="location-select" title="Weather location">
+                    <option value="Tiruchirappalli">📍 Tiruchirappalli</option>
+                    <option value="Chennai">📍 Chennai</option>
+                    <option value="Mumbai">📍 Mumbai</option>
+                    <option value="Bengaluru">📍 Bengaluru</option>
+                </select>
+                <button id="generateCsvBtn" class="btn-secondary"><i class="fa-solid fa-file-csv"></i> Sample CSV</button>
+                <button id="exportReportBtn" class="btn-primary" disabled><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+            </div>
+        </header>
+
+        <!-- KPI Row -->
+        <div class="kpi-row">
+            <div class="card kpi" id="kpi-risk">
+                <div class="kpi-icon"><i class="fa-solid fa-gauge-high"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Current Risk Level</span>
+                    <span class="kpi-value" id="dash-risk-level">--</span>
+                    <span class="kpi-sub">Latest system analysis</span>
                 </div>
-                <div class="card kpi">
-                    <span class="card-title"><i class="fa-solid fa-bell"></i> Active Alerts</span>
-                    <span class="card-value" id="dash-active-alerts">0</span>
-                    <span class="card-description">High priority alerts</span>
+            </div>
+            <div class="card kpi">
+                <div class="kpi-icon" style="background:rgba(231,76,60,0.12);color:#e74c3c"><i class="fa-solid fa-bell"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Active Alerts</span>
+                    <span class="kpi-value" id="dash-active-alerts">0</span>
+                    <span class="kpi-sub">Unacknowledged events</span>
                 </div>
-                <div class="card kpi">
-                    <span class="card-title"><i class="fa-solid fa-cloud-sun"></i> Current Weather</span>
-                    <span class="card-value" id="dash-weather-condition">--</span>
-                    <span class="card-description" id="dash-weather-details">Fetching...</span>
+            </div>
+            <div class="card kpi">
+                <div class="kpi-icon" style="background:rgba(46,204,113,0.12);color:#2ecc71"><i class="fa-solid fa-cloud-sun"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Current Weather</span>
+                    <span class="kpi-value" id="dash-weather-condition" style="font-size:1.1rem;line-height:1.4">--</span>
+                    <span class="kpi-sub" id="dash-weather-details">Fetching...</span>
                 </div>
-                <div class="card activity-feed">
-                    <h3 class="card-header"><i class="fa-solid fa-list-check"></i> Recent Activity</h3>
-                    <ul id="recent-activity-list">
-                        <li>System initialized. Ready for analysis.</li>
-                    </ul>
-                </div>
-                <div class="card quick-actions">
-                    <h3 class="card-header"><i class="fa-solid fa-upload"></i> Quick Actions</h3>
-                    <form id="uploadForm">
-                        <label for="sensorFile">Sensor CSV:</label>
-                        <input type="file" id="sensorFile" name="sensorFile" accept=".csv" required>
-                        <label for="imageFile">Slope Image:</label>
-                        <input type="file" id="imageFile" name="imageFile" accept="image/*" required>
-                        <button type="submit">Analyze New Data</button>
-                    </form>
+            </div>
+            <div class="card kpi">
+                <div class="kpi-icon" style="background:rgba(155,89,182,0.12);color:#9b59b6"><i class="fa-solid fa-brain"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Model Confidence</span>
+                    <span class="kpi-value" id="dash-confidence">--</span>
+                    <span class="kpi-sub">AI prediction confidence</span>
                 </div>
             </div>
         </div>
 
-        <div id="predictions" class="page-content">
-            <header class="page-header">
-                <h1>Rockfall Predictions</h1>
-                <p>Analyze trends and future predictions using interactive charts and graphs</p>
-            </header>
-            <div class="grid-container">
-                <div class="card chart-card">
-                    <h3 class="card-header"><i class="fa-solid fa-chart-area"></i> Risk Level Trend</h3>
-                    <canvas id="riskTrendChart"></canvas>
+        <!-- Main Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Gauge -->
+            <div class="card gauge-card">
+                <h3 class="card-header"><i class="fa-solid fa-tachometer-alt"></i> Risk Gauge</h3>
+                <div class="gauge-container">
+                    <canvas id="riskGaugeChart" width="260" height="150"></canvas>
+                    <div class="gauge-label">
+                        <span id="gaugePercent">0%</span>
+                        <small id="gaugeLevel">No Data</small>
+                    </div>
                 </div>
-                <div class="card info-card">
-                    <h3 class="card-header"><i class="fa-solid fa-circle-info"></i> Model Information</h3>
-                    <ul>
-                        <li><strong>Model Accuracy:</strong> <span id="model-accuracy">94.5%</span></li>
-                        <li><strong>Data Sources:</strong> <span id="model-sources">Hybrid (Sensors + Visual)</span></li>
-                        <li><strong>Prediction Confidence:</strong> <span id="model-confidence">--</span></li>
-                        <li><strong>Total Predictions:</strong> <span id="model-predictions">0</span></li>
+            </div>
+
+            <!-- Donut -->
+            <div class="card donut-card">
+                <h3 class="card-header"><i class="fa-solid fa-chart-pie"></i> Risk Contribution</h3>
+                <canvas id="contributionChart"></canvas>
+                <div class="donut-legend">
+                    <span><i class="fa-solid fa-circle" style="color:#4a90e2"></i> Sensor (60%)</span>
+                    <span><i class="fa-solid fa-circle" style="color:#e74c3c"></i> Vision (40%)</span>
+                </div>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card quick-actions">
+                <h3 class="card-header"><i class="fa-solid fa-magnifying-glass-chart"></i> Run Analysis</h3>
+                <form id="uploadForm">
+                    <label for="sensorFile"><i class="fa-solid fa-file-csv"></i> Sensor CSV:</label>
+                    <input type="file" id="sensorFile" name="sensorFile" accept=".csv" required>
+                    <label for="imageFile"><i class="fa-solid fa-image"></i> Slope Image:</label>
+                    <input type="file" id="imageFile" name="imageFile" accept="image/*" required>
+                    <div id="imagePreviewContainer" class="image-preview-container" style="display:none">
+                        <img id="imagePreview" src="" alt="Preview">
+                    </div>
+                    <button type="submit" id="analyzeBtn"><i class="fa-solid fa-play"></i> Run Analysis</button>
+                </form>
+                <div id="analyzeLoader" class="skeleton-loader" style="display:none">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line medium"></div>
+                    <div class="skeleton-line short"></div>
+                    <div class="skeleton-line medium"></div>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="card activity-feed">
+                <h3 class="card-header"><i class="fa-solid fa-list-check"></i> Recent Activity</h3>
+                <ul id="recent-activity-list">
+                    <li class="activity-item">
+                        <i class="fa-solid fa-circle-check act-icon ok"></i>
+                        <span>System initialized. Ready for analysis.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== LIVE MONITOR ======== -->
+    <div id="live" class="page-content">
+        <header class="page-header">
+            <div>
+                <h1><i class="fa-solid fa-satellite-dish"></i> Live Sensor Monitor</h1>
+                <p>Real-time simulation of underground mine sensors (polls every 2 seconds)</p>
+            </div>
+            <div class="header-actions">
+                <span id="livePulse" class="live-pulse"><i class="fa-solid fa-circle"></i> STANDBY</span>
+                <button id="toggleLiveBtn" class="btn-primary"><i class="fa-solid fa-play"></i> Start Monitoring</button>
+            </div>
+        </header>
+
+        <div class="kpi-row">
+            <div class="card kpi">
+                <div class="kpi-icon" style="background:rgba(74,144,226,0.12);color:#4a90e2"><i class="fa-solid fa-arrows-up-down"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Displacement</span>
+                    <span class="kpi-value" id="live-displacement">-- mm</span>
+                    <span class="kpi-sub">Surface movement</span>
+                </div>
+            </div>
+            <div class="card kpi">
+                <div class="kpi-icon" style="background:rgba(231,76,60,0.12);color:#e74c3c"><i class="fa-solid fa-droplet"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Pore Pressure</span>
+                    <span class="kpi-value" id="live-pressure">-- kPa</span>
+                    <span class="kpi-sub">Subsurface water pressure</span>
+                </div>
+            </div>
+            <div class="card kpi">
+                <div class="kpi-icon" style="background:rgba(243,156,18,0.12);color:#f39c12"><i class="fa-solid fa-compress-alt"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Strain</span>
+                    <span class="kpi-value" id="live-strain">-- με</span>
+                    <span class="kpi-sub">Rock micro-deformation</span>
+                </div>
+            </div>
+            <div class="card kpi">
+                <div class="kpi-icon" style="background:rgba(231,76,60,0.12);color:#e74c3c"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Estimated Risk</span>
+                    <span class="kpi-value" id="live-risk">--</span>
+                    <span class="kpi-sub">Sensor-based estimate</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card live-chart-card">
+            <h3 class="card-header"><i class="fa-solid fa-wave-square"></i> Real-Time Sensor Feed (Last 30 Readings)</h3>
+            <canvas id="liveChart" style="max-height:300px"></canvas>
+        </div>
+    </div>
+
+    <!-- ======== PREDICTIONS ======== -->
+    <div id="predictions" class="page-content">
+        <header class="page-header">
+            <div>
+                <h1><i class="fa-solid fa-chart-area"></i> Rockfall Predictions</h1>
+                <p>Multi-sensor trend analysis and YOLO visual crack detection</p>
+            </div>
+        </header>
+        <div class="predictions-grid">
+            <div class="card chart-card">
+                <h3 class="card-header"><i class="fa-solid fa-chart-line"></i> Multi-Sensor Trend (Last 20 Readings)</h3>
+                <canvas id="riskTrendChart" style="max-height:280px"></canvas>
+            </div>
+            <div class="card info-card">
+                <h3 class="card-header"><i class="fa-solid fa-circle-info"></i> Model Information</h3>
+                <ul class="info-list">
+                    <li><strong>Model Accuracy</strong> <span id="model-accuracy" class="badge badge-green">94.5%</span></li>
+                    <li><strong>Data Sources</strong> <span>Hybrid (Sensors + Visual)</span></li>
+                    <li><strong>Prediction Confidence</strong> <span id="model-confidence">--</span></li>
+                    <li><strong>Total Predictions</strong> <span id="model-predictions">0</span></li>
+                    <li><strong>Cracks Detected</strong> <span id="info-cracks">--</span></li>
+                    <li><strong>Numerical Risk</strong> <span id="info-num-risk">--</span></li>
+                    <li><strong>Visual Risk</strong> <span id="info-vis-risk">--</span></li>
+                    <li><strong>Rainfall Impact</strong> <span id="info-rainfall">--</span></li>
+                </ul>
+            </div>
+
+            <!-- Before / After Comparison -->
+            <div class="card visual-analysis-card">
+                <h3 class="card-header"><i class="fa-solid fa-camera"></i> YOLO Crack Detection — Original vs Annotated</h3>
+                <div class="img-wrapper" id="imgWrapper">
+                    <p id="visual-analysis-placeholder">Upload an image to see YOLO crack detections.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== ZONE MAP ======== -->
+    <div id="map" class="page-content">
+        <header class="page-header">
+            <div>
+                <h1><i class="fa-solid fa-map"></i> Mine Zone Map</h1>
+                <p>Top-down view of open-pit mine zones colored by real-time risk level</p>
+            </div>
+        </header>
+        <div class="map-layout">
+            <div class="card map-card">
+                <h3 class="card-header"><i class="fa-solid fa-signs-post"></i> Zone Risk Visualization</h3>
+                <svg id="mineMap" viewBox="0 0 620 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;border-radius:10px">
+                    <!-- Background -->
+                    <rect width="620" height="420" rx="10" fill="none"/>
+                    <!-- Pit border -->
+                    <ellipse cx="310" cy="210" rx="275" ry="180" fill="none" stroke="var(--border)" stroke-width="2" stroke-dasharray="8,4"/>
+                    <!-- Zones -->
+                    <path id="zone-north" d="M 310 30 A 275 180 0 0 1 585 210 L 310 210 Z" fill="#2ecc71" opacity="0.75" class="mine-zone" data-zone="North Slope"/>
+                    <path id="zone-east"  d="M 585 210 A 275 180 0 0 1 310 390 L 310 210 Z" fill="#2ecc71" opacity="0.75" class="mine-zone" data-zone="East Wall"/>
+                    <path id="zone-south" d="M 310 390 A 275 180 0 0 1 35 210 L 310 210 Z"  fill="#2ecc71" opacity="0.75" class="mine-zone" data-zone="South Slope"/>
+                    <path id="zone-west"  d="M 35 210 A 275 180 0 0 1 310 30 L 310 210 Z"   fill="#2ecc71" opacity="0.75" class="mine-zone" data-zone="West Wall"/>
+                    <!-- Pit floor -->
+                    <ellipse cx="310" cy="210" rx="75" ry="50" fill="#1a2035" opacity="0.85"/>
+                    <text x="310" y="215" text-anchor="middle" fill="#8896b3" font-size="12" font-family="Inter,sans-serif" font-weight="500">Pit Floor</text>
+                    <!-- Zone labels -->
+                    <text x="310" y="115" text-anchor="middle" fill="white" font-size="15" font-weight="700" font-family="Inter,sans-serif">North Slope</text>
+                    <text id="map-label-north" x="310" y="135" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif">LOW RISK</text>
+                    <text x="475" y="215" text-anchor="middle" fill="white" font-size="15" font-weight="700" font-family="Inter,sans-serif">East Wall</text>
+                    <text id="map-label-east" x="475" y="235" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif">LOW RISK</text>
+                    <text x="310" y="315" text-anchor="middle" fill="white" font-size="15" font-weight="700" font-family="Inter,sans-serif">South Slope</text>
+                    <text id="map-label-south" x="310" y="335" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif">LOW RISK</text>
+                    <text x="150" y="215" text-anchor="middle" fill="white" font-size="15" font-weight="700" font-family="Inter,sans-serif">West Wall</text>
+                    <text id="map-label-west" x="150" y="235" text-anchor="middle" fill="white" font-size="12" font-family="Inter,sans-serif">LOW RISK</text>
+                    <!-- Sensor dots -->
+                    <circle class="pulse-dot" cx="310" cy="55" r="9" fill="#4a90e2"/>
+                    <circle class="pulse-dot" cx="550" cy="210" r="9" fill="#4a90e2"/>
+                    <circle class="pulse-dot" cx="310" cy="370" r="9" fill="#4a90e2"/>
+                    <circle class="pulse-dot" cx="75" cy="210" r="9" fill="#4a90e2"/>
+                </svg>
+                <div class="map-legend">
+                    <span class="legend-item"><span class="legend-color" style="background:#2ecc71"></span>Low Risk</span>
+                    <span class="legend-item"><span class="legend-color" style="background:#f39c12"></span>Moderate Risk</span>
+                    <span class="legend-item"><span class="legend-color" style="background:#e74c3c"></span>High Risk</span>
+                    <span class="legend-item"><span class="legend-color" style="background:#4a90e2;border-radius:50%"></span>Sensor Node</span>
+                </div>
+            </div>
+
+            <div class="map-sidebar">
+                <div class="card">
+                    <h3 class="card-header"><i class="fa-solid fa-list"></i> Zone Details</h3>
+                    <ul class="zone-list">
+                        <li class="zone-list-item">
+                            <div class="zone-name"><i class="fa-solid fa-circle-dot"></i> North Slope</div>
+                            <div class="zone-badge badge-green" id="zb-north">LOW</div>
+                            <div class="zone-conf" id="zc-north">Confidence: --</div>
+                        </li>
+                        <li class="zone-list-item">
+                            <div class="zone-name"><i class="fa-solid fa-circle-dot"></i> East Wall</div>
+                            <div class="zone-badge badge-green" id="zb-east">LOW</div>
+                            <div class="zone-conf" id="zc-east">Confidence: --</div>
+                        </li>
+                        <li class="zone-list-item">
+                            <div class="zone-name"><i class="fa-solid fa-circle-dot"></i> South Slope</div>
+                            <div class="zone-badge badge-green" id="zb-south">LOW</div>
+                            <div class="zone-conf" id="zc-south">Confidence: --</div>
+                        </li>
+                        <li class="zone-list-item">
+                            <div class="zone-name"><i class="fa-solid fa-circle-dot"></i> West Wall</div>
+                            <div class="zone-badge badge-green" id="zb-west">LOW</div>
+                            <div class="zone-conf" id="zc-west">Confidence: --</div>
+                        </li>
                     </ul>
                 </div>
-                <div class="card visual-analysis-card">
-                    <h3 class="card-header"><i class="fa-solid fa-camera"></i> Visual Crack Analysis</h3>
-                    <div class="visual-analysis-container">
-                        <img id="annotated-crack-image" src="" alt="Annotated Crack Image">
-                        <p id="visual-analysis-placeholder">Upload an image to see crack detections.</p>
+                <div class="card">
+                    <h3 class="card-header"><i class="fa-solid fa-person-digging"></i> Mitigation Actions</h3>
+                    <ul class="mitigation-list" id="map-mitigation-list">
+                        <li>Run an analysis to generate recommendations.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== RESULTS ======== -->
+    <div id="results" class="page-content">
+        <header class="page-header">
+            <div>
+                <h1><i class="fa-solid fa-flask"></i> Latest Analysis Results</h1>
+                <p>Detailed breakdown of the most recent AI-powered analysis</p>
+            </div>
+            <button id="exportResultsBtn" class="btn-primary" disabled><i class="fa-solid fa-file-pdf"></i> Export PDF Report</button>
+        </header>
+        <div id="reportContent">
+            <div class="kpi-row">
+                <div class="card kpi">
+                    <div class="kpi-icon"><i class="fa-solid fa-flag-checkered"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Overall Risk Level</span>
+                        <span class="kpi-value" id="results-risk-level">--</span>
+                        <span class="kpi-sub">Final fusion score</span>
+                    </div>
+                </div>
+                <div class="card kpi">
+                    <div class="kpi-icon" style="background:rgba(155,89,182,0.12);color:#9b59b6"><i class="fa-solid fa-percent"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Model Confidence</span>
+                        <span class="kpi-value" id="results-confidence">--</span>
+                        <span class="kpi-sub">AI ensemble confidence</span>
+                    </div>
+                </div>
+                <div class="card kpi">
+                    <div class="kpi-icon" style="background:rgba(52,152,219,0.12);color:#3498db"><i class="fa-solid fa-calendar-days"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Analysis Date</span>
+                        <span class="kpi-value" id="results-date" style="font-size:1rem;line-height:1.5">--</span>
+                        <span class="kpi-sub">Timestamp of last run</span>
+                    </div>
+                </div>
+                <div class="card kpi">
+                    <div class="kpi-icon" style="background:rgba(230,126,34,0.12);color:#e67e22"><i class="fa-solid fa-eye"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Cracks Detected</span>
+                        <span class="kpi-value" id="results-cracks">--</span>
+                        <span class="kpi-sub">YOLO object count</span>
+                    </div>
+                </div>
+            </div>
+            <div class="results-lower">
+                <div class="card mitigation-card">
+                    <h3 class="card-header"><i class="fa-solid fa-person-digging"></i> Smart Mitigation Actions</h3>
+                    <ul class="mitigation-list" id="mitigation-actions-list">
+                        <li>Run an analysis to generate actions.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 class="card-header"><i class="fa-solid fa-signs-post"></i> Zone Risk Analysis</h3>
+                    <ul class="zone-list" id="zone-analysis-list"></ul>
+                </div>
+                <div class="card xai-card">
+                    <h3 class="card-header"><i class="fa-solid fa-lightbulb"></i> XAI Explanation</h3>
+                    <p id="xai-text" class="xai-text">Run an analysis to see the AI explanation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== HISTORY ======== -->
+    <div id="history" class="page-content">
+        <header class="page-header">
+            <div>
+                <h1><i class="fa-solid fa-clock-rotate-left"></i> Analysis History</h1>
+                <p>All analyses from this session stored locally</p>
+            </div>
+            <button id="clearHistoryBtn" class="btn-danger"><i class="fa-solid fa-trash"></i> Clear History</button>
+        </header>
+        <div class="card">
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Date & Time</th>
+                        <th>Risk Score</th>
+                        <th>Risk Level</th>
+                        <th>Confidence</th>
+                        <th>Weather</th>
+                        <th>Sensor Risk</th>
+                        <th>Visual Risk</th>
+                        <th>Cracks</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:30px">No history yet. Run an analysis to begin.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ======== ALERTS ======== -->
+    <div id="alerts" class="page-content">
+        <header class="page-header">
+            <div>
+                <h1><i class="fa-solid fa-triangle-exclamation"></i> Active & Recent Alerts</h1>
+                <p>High-risk events flagged by MineGuard AI</p>
+            </div>
+        </header>
+        <div class="card">
+            <table id="alertsTable">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Risk Score</th>
+                        <th>Severity</th>
+                        <th>Details</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="alertsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ======== WORKERS ======== -->
+    <div id="workers" class="page-content">
+        <header class="page-header">
+            <div>
+                <h1><i class="fa-solid fa-hard-hat"></i> Mine Workers</h1>
+                <p>Manage registered mine workers — they receive automatic alerts when high risk is detected</p>
+            </div>
+            <div class="header-actions">
+                <button id="broadcastAlertBtn" class="btn-danger" disabled>
+                    <i class="fa-solid fa-bullhorn"></i> Broadcast Alert to All
+                </button>
+            </div>
+        </header>
+
+        <!-- Alert Status Banner -->
+        <div id="alertStatusBanner" class="alert-status-banner" style="display:none">
+            <i class="fa-solid fa-circle-check"></i>
+            <span id="alertStatusText">Alerts sent.</span>
+        </div>
+
+        <div class="workers-layout">
+            <!-- Add Worker Form -->
+            <div class="card add-worker-card">
+                <h3 class="card-header"><i class="fa-solid fa-user-plus"></i> Register New Worker</h3>
+                <form id="addWorkerForm">
+                    <div class="form-group">
+                        <label for="workerName"><i class="fa-solid fa-user"></i> Full Name *</label>
+                        <input type="text" id="workerName" placeholder="e.g. Rajesh Kumar" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="workerEmail"><i class="fa-solid fa-envelope"></i> Email Address</label>
+                        <input type="email" id="workerEmail" placeholder="e.g. rajesh@example.com">
+                        <small class="form-hint">Required for email alerts</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="workerPhone"><i class="fa-solid fa-phone"></i> Phone Number</label>
+                        <input type="tel" id="workerPhone" placeholder="e.g. +919876543210">
+                        <small class="form-hint">Required for SMS alerts (Twilio)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="workerZone"><i class="fa-solid fa-map-pin"></i> Assigned Zone</label>
+                        <select id="workerZone">
+                            <option value="North Slope">North Slope</option>
+                            <option value="East Wall">East Wall</option>
+                            <option value="South Slope">South Slope</option>
+                            <option value="West Wall">West Wall</option>
+                            <option value="Central Pit">Central Pit</option>
+                            <option value="General">General / All Zones</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="workerRole"><i class="fa-solid fa-briefcase"></i> Role</label>
+                        <select id="workerRole">
+                            <option value="Miner">Miner</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Safety Officer">Safety Officer</option>
+                            <option value="Geologist">Geologist</option>
+                            <option value="Equipment Operator">Equipment Operator</option>
+                            <option value="Engineer">Engineer</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width:100%;margin-top:6px">
+                        <i class="fa-solid fa-user-plus"></i> Register Worker
+                    </button>
+                </form>
+            </div>
+
+            <!-- Workers List -->
+            <div class="card workers-list-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <h3 class="card-header" style="margin-bottom:0;border:none;padding:0">
+                        <i class="fa-solid fa-users"></i> Registered Workers
+                        <span id="workerListCount" class="badge badge-green" style="margin-left:6px">0</span>
+                    </h3>
+                    <div style="display:flex;gap:8px">
+                        <input type="text" id="workerSearch" placeholder="Search..." class="search-input">
+                    </div>
+                </div>
+
+                <div id="workerGrid" class="worker-grid">
+                    <div class="worker-empty" id="workerEmpty">
+                        <i class="fa-solid fa-hard-hat" style="font-size:2.5rem;color:var(--text-light);margin-bottom:12px"></i>
+                        <p>No workers registered yet.</p>
+                        <p style="font-size:0.85rem">Add workers using the form on the left.</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="results" class="page-content">
-            <header class="page-header">
-                <h1>Latest Analysis Results</h1>
-                <p>Detailed breakdown of the most recent open-pit mine analysis</p>
-            </header>
-            <div class="grid-container">
-                 <div class="card kpi">
-                    <span class="card-title"><i class="fa-solid fa-flag-checkered"></i> Overall Risk Level</span>
-                    <span class="card-value" id="results-risk-level">--</span>
-                    <span class="card-description">Based on latest data</span>
-                </div>
-                <div class="card kpi">
-                    <span class="card-title"><i class="fa-solid fa-percent"></i> Model Confidence</span>
-                    <span class="card-value" id="results-confidence">--</span>
-                    <span class="card-description">Average prediction confidence</span>
-                </div>
-                <div class="card kpi">
-                    <span class="card-title"><i class="fa-solid fa-calendar-days"></i> Analysis Date</span>
-                    <span class="card-value" id="results-date">--</span>
-                    <span class="card-description">Uploaded CSV Data</span>
-                </div>
-                <div class="card mitigation-card">
-                    <h3 class="card-header"><i class="fa-solid fa-person-digging"></i> Model-Based Mitigation Actions</h3>
-                    <ul id="mitigation-actions-list">
-                        <li>Run an analysis to generate actions.</li>
-                    </ul>
-                </div>
-                <div class="card zone-card">
-                     <h3 class="card-header"><i class="fa-solid fa-signs-post"></i> Zone Risk Analysis</h3>
-                     <ul id="zone-analysis-list">
-                        <li>Run an analysis to generate zone data.</li>
-                     </ul>
-                </div>
-            </div>
-        </div>
-
-        <div id="alerts" class="page-content">
-            <header class="page-header"><h2><i class="fa-solid fa-triangle-exclamation"></i> Active and Recent Alerts</h2></header>
-            <div class="card">
-                <table id="alertsTable">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Risk Score</th>
-                            <th>Severity</th>
-                            <th>Details</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+        <!-- Alert Log -->
+        <div class="card" style="margin-top:16px">
+            <h3 class="card-header"><i class="fa-solid fa-history"></i> Alert Dispatch Log</h3>
+            <table id="alertLogTable">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Triggered By</th>
+                        <th>Risk Level</th>
+                        <th>Risk Score</th>
+                        <th>Workers Notified</th>
+                        <th>Email</th>
+                        <th>SMS</th>
+                    </tr>
+                </thead>
+                <tbody id="alertLogBody">
+                    <tr><td colspan="7" style="text-align:center;color:var(--text-light);padding:20px">No alerts dispatched yet.</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <div class="gemini-chatbot-container" id="chatbotContainer">
-        <div class="chatbot-header"><h3><i class="fa-solid fa-robot"></i> AI Assistant</h3><button class="close-chatbot" id="closeChatbot">&times;</button></div>
-        <div class="chatbot-messages" id="chatbotMessages"><div class="message bot-message">Hello! I'm your MineGuard AI assistant. How can I help you today?</div></div>
-        <div class="chatbot-input"><input type="text" id="chatInput" placeholder="Ask me anything..."><button id="sendChat">Send</button></div>
-    </div>
-    <div id="alertModal" class="modal-overlay">
-        <div class="modal-content">
-            <span class="modal-close" id="modalClose">&times;</span>
-            <div class="modal-icon alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <h2>CRITICAL ALERT</h2>
-            <p id="alert-details">A high-risk event has been detected.</p>
-            <p><strong>Action:</strong> SMS & Email notifications dispatched.</p>
-        </div>
-    </div>
+</div><!-- end main-content -->
 
-    <script src="script.js"></script>
+<!-- ============================================================
+     CHATBOT
+     ============================================================ -->
+<div class="gemini-chatbot-container" id="chatbotContainer">
+    <div class="chatbot-header">
+        <h3><i class="fa-solid fa-robot"></i> MineGuard AI Assistant</h3>
+        <button class="close-chatbot" id="closeChatbot">&times;</button>
+    </div>
+    <div class="chatbot-messages" id="chatbotMessages">
+        <div class="message bot-message">Hello! I'm MineGuard AI. Upload data and run an analysis first, then ask me anything about the results — risk levels, sensor readings, safety actions, and more!</div>
+    </div>
+    <div class="chatbot-input">
+        <input type="text" id="chatInput" placeholder="Ask about risk, sensors, safety...">
+        <button id="sendChat"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<!-- ============================================================
+     ALERT MODAL
+     ============================================================ -->
+<div id="alertModal" class="modal-overlay">
+    <div class="modal-content">
+        <span class="modal-close" id="modalClose">&times;</span>
+        <div class="modal-icon alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h2>⚠ CRITICAL ALERT</h2>
+        <p id="alert-details">A high-risk event has been detected.</p>
+        <p><strong>Action:</strong> Emergency notifications dispatched to site supervisors.</p>
+        <button class="btn-danger" id="modalAcknowledge" style="width:100%;padding:12px;margin-top:14px">Acknowledge Alert</button>
+    </div>
+</div>
+
+<!-- ============================================================
+     TOAST CONTAINER
+     ============================================================ -->
+<div id="toastContainer" class="toast-container"></div>
+
+<style>
+/* Inline extras */
+.location-select {
+    padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--card-bg);
+    color: var(--text); font-size: 0.85rem; font-family: inherit; cursor: pointer;
+}
+.alert-badge {
+    background: #e74c3c; color: white; font-size: 0.7rem; font-weight: 700;
+    padding: 1px 6px; border-radius: 10px; margin-left: 4px; vertical-align: middle;
+}
+.pulse-dot { animation: mapPulse 2s ease-in-out infinite; }
+@keyframes mapPulse {
+    0%, 100% { opacity: 1; r: 9; }
+    50% { opacity: 0.5; r: 13; }
+}
+</style>
+<script src="script.js"></script>
 </body>
 </html>
