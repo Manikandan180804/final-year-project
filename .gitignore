@@ -15,7 +15,4 @@ runs/
 Mine-crack-datasets-1/
 Snapshot/
 Oddities/
-*.pt
-*.joblib
-*.csv
 crack_*.jpg

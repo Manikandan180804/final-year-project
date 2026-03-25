@@ -1,0 +1,7 @@
+flask
+flask-cors
+pandas
+joblib
+requests
+ultralytics
+opencv-python
