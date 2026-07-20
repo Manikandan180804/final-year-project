@@ -49,7 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let liveRunning       = false;
     let liveBuffer        = { disp: [], pres: [], strain: [], labels: [] };
     const MAX_LIVE_POINTS = 30;
-    const API_BASE        = 'http://localhost:5000';
+    const API_BASE        = (window.location.origin && window.location.origin !== 'null' && !window.location.protocol.startsWith('file'))
+                            ? window.location.origin
+                            : 'http://localhost:5000';
 
     // ============ THEME TOGGLE ============
     const savedTheme = localStorage.getItem('mineguard_theme') || 'dark';
